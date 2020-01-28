@@ -42,9 +42,6 @@ private:
   Func m_func;
 };
 
-#define PdS(NAME, MS) Periodical NAME(3000,[]()
-#define PdE(NAME) ); NAME();
-
 /* Using CRTP to create derived classes and get rid of the function
  * object overhead.
  *
@@ -115,15 +112,79 @@ private:
   unsigned long m_prev;
 };
 
-/* A more C-ish implementation */
 
-#define _P_CONCAT(A, B) A ## B
+// TODO: implement a CRTP version of this
+// TODO: implement a callback version of this
+class Timer
+{
+public:
+    typedef unsigned long ms_t;
+    typedef enum {
+        OneShot,
+        Periodic,
+    } Mode;
 
-#define PS(NAME, MS) \
-  static unsigned long _P_CONCAT(NAME, _prev) = 0; \
-  if (millis() - _P_CONCAT(NAME, _prev) > MS) { \
-    _P_CONCAT(NAME, _prev) = millis();
-#define PE() }
+    // todo: perhaps slave and master require different settings (e.g. timeout)
+    Timer(const ms_t & timeout = 0,
+          const Mode & mode = OneShot)
+        : m_mode(mode)
+        , m_running(false)
+        , m_timeoutMs(timeout)
+        , m_timerLastMs(0)
+    { }
+    bool expired()
+    {
+        if (m_running and m_timeoutMs) {
+            auto now = millis();
+            if (now - m_timerLastMs > m_timeoutMs) {
+                if (m_mode == OneShot) {
+                    m_running = false;
+                } else {
+                    m_timerLastMs = now;
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+    void start(void)
+    {
+      start(m_timeoutMs);
+    }
+    void start(ms_t timeoutMs)
+    {
+        m_timerLastMs = millis();
+        m_timeoutMs = timeoutMs;
+        m_running = true;
+    }
+    void setTimeout(ms_t timeoutMs)
+    {
+        m_timeoutMs = timeoutMs;
+    }
+    ms_t getTimeout(void) const
+    {
+        return m_timeoutMs;
+    }
+    void setMode(Mode mode)
+    {
+      m_mode = mode;
+    }
+    void stop(void)
+    {
+        m_running = false;
+    }
+
+    bool running(void) const
+    {
+        return m_running;
+    }
+
+private:
+    Mode m_mode;
+    bool m_running;
+    ms_t m_timeoutMs;
+    ms_t m_timerLastMs;
+};
 
 /** Placing the print functions into a separate namespace.
  * This way anyone can decide to swap it in with
@@ -138,6 +199,10 @@ namespace ewprt {
 
 template<class T> inline Print &operator <<(Print &obj, T arg) { obj.print(arg); return obj; }
 
+const char*
+prtFmt(char* buf, size_t buflen, const char *fmt, ... )
+  __attribute__ ((format (printf, 3, 4)));
+
 inline const char*
 prtFmt(char* buf, size_t buflen, const char *fmt, ... )
 {
@@ -149,6 +214,11 @@ prtFmt(char* buf, size_t buflen, const char *fmt, ... )
 }
 
 template <size_t BufSize=64>
+Print&
+prtFmt(Print& prt, const char *fmt, ...)
+  __attribute__ ((format (printf, 2, 3)));
+
+template <size_t BufSize>
 inline Print&
 prtFmt(Print& prt, const char *fmt, ...)
 {
@@ -161,6 +231,26 @@ prtFmt(Print& prt, const char *fmt, ...)
 
   prt.print(buf);
   return prt;
+}
+
+template <size_t BufSize=64>
+inline String&
+prtFmt(String& str, const char *fmt, ...)
+  __attribute__ ((format (printf, 2, 3)));
+
+template <size_t BufSize>
+inline String&
+prtFmt(String& str, const char *fmt, ...)
+{
+  char buf[BufSize]{0};
+
+  va_list args;
+  va_start(args, fmt);
+  vsnprintf(buf, BufSize, fmt, args);
+  va_end(args);
+
+  str = buf;
+  return str;
 }
 
 } // namespace ewprt
