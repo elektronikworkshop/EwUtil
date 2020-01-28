@@ -195,7 +195,7 @@ private:
  * advantage of the stream operator)
  *
  */
-namespace ewprt {
+namespace ew {
 
 template<class T> inline Print &operator <<(Print &obj, T arg) { obj.print(arg); return obj; }
 
@@ -251,6 +251,70 @@ prtFmt(String& str, const char *fmt, ...)
 
   str = buf;
   return str;
+}
+
+
+const unsigned long SECS_PER_MIN  (60UL);
+const unsigned long SECS_PER_HOUR (3600UL);
+const unsigned long SECS_PER_DAY  (SECS_PER_HOUR * 24UL);
+
+
+inline unsigned long
+numberOfSeconds(unsigned long seconds)
+{
+  return seconds % SECS_PER_MIN;
+}
+
+inline unsigned long
+numberOfMinutes(unsigned long seconds)
+{
+  return (seconds / SECS_PER_MIN) % SECS_PER_MIN;
+
+}
+
+inline unsigned long
+numberOfHours(unsigned long seconds)
+{
+  return (seconds% SECS_PER_DAY) / SECS_PER_HOUR;
+
+}
+
+inline unsigned long
+numberOfDays(unsigned long seconds)
+{
+  return seconds / SECS_PER_DAY;
+}
+
+inline String &
+fmtElapsed(String &str,
+           unsigned long seconds,
+           bool all = false,
+           const char *fmts = "%lus",
+           const char *fmtm = "%lum %02lus",
+           const char *fmth = "%luh %02lum %02lus",
+           const char *fmtd = "%lud %02luh %02lum %02lus")
+{
+  auto d = numberOfDays(seconds);
+  auto h = numberOfHours(seconds);
+  auto m = numberOfMinutes(seconds);
+  auto s = numberOfSeconds(seconds);
+
+  // note: in case some sort of flagging is
+  // implemented:
+  // 
+  //  when printing only up to h we have to 
+  //  multiply the d with number of h per d
+  //  ... and so on for "up to m"
+
+  if (d or all) {
+    return prtFmt(str, fmtd, d, h, m, s);
+  } else if (h) {
+    return prtFmt(str, fmth, h, m, s);
+  } else if (m) {
+    return prtFmt(str, fmtm, m, s);
+  } else {
+    return prtFmt(str, fmts, s);
+  }
 }
 
 } // namespace ewprt
