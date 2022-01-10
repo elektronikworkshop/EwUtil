@@ -6,8 +6,7 @@
  *      Author: uli
  */
 
-#ifndef EWUTIL_H_
-#define EWUTIL_H_
+#pragma once
 
 #include <Arduino.h>
 #include <functional>
