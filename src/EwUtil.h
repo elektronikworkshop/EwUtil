@@ -189,7 +189,7 @@ private:
 /** Placing the print functions into a separate namespace.
  * This way anyone can decide to swap it in with
  *
- *   using namespace ewprt;
+ *   using namespace ew;
  *
  * or by accessing them via namespace (and not having the
  * advantage of the stream operator)
@@ -317,6 +317,4 @@ fmtElapsed(String &str,
   }
 }
 
-} // namespace ewprt
-
-#endif /* EWUTIL_H_ */
+} // namespace ew
