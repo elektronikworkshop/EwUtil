@@ -11,6 +11,21 @@
 #include <Arduino.h>
 #include <functional>
 
+/** In order for the following macros to work you have to include
+ * the automatically generated git-version.h header before including
+ * EwUtil.h:
+ *  
+ *  #if __has_include("git-version.h")
+ *  # include "git-version.h"
+ *  #endif
+ * 
+ * For more info see https://arduino.stackexchange.com/a/51488
+ */
+#ifndef GIT_VERSION
+# define GIT_VERSION "<none>"
+#endif
+#define VERSION "git: " GIT_VERSION ", build: " __DATE__ " " __TIME__
+
 /* C++ 11 implementation */
 
 class Periodical
